@@ -1,209 +1,199 @@
 #!/usr/bin/env python
 # coding: utf-8
 
+# ## 说明
+# 
+# 请按照填空顺序编号分别完成 参数优化，不同基函数的实现
+
 import numpy as np
 import matplotlib.pyplot as plt
 
 
-def load_data(filename): 
-    """载入数据。"""
+def load_data(filename):
+    """载入数据。
+
+    Args:
+        filename: 数据文件的路径
+
+    Returns:
+        tuple: 包含特征和标签的numpy数组 (xs, ys)
+    """
     xys = []
     with open(filename, 'r') as f:
         for line in f:
+            # 将每行内容按空格分割并转换为浮点数
             line_data = list(map(float, line.strip().split()))
             xys.append(line_data)
+    # 将数据拆分为特征和标签
     xs, ys = zip(*xys)
     return np.asarray(xs), np.asarray(ys)
 
 
+# ## 恒等基函数（Identity Basis Function）的实现 填空顺序 2
+# 
 def identity_basis(x):
-    """恒等基函数"""
+    ret = np.expand_dims(x, axis=1)
+    return ret
+    
+# 请分别在这里实现“多项式基函数”（Multinomial Basis Function）以及“高斯基函数”（Gaussian Basis Function）
+  
+# 其中以及训练集的x的范围在0-25之间
+
+def identity_basis(x):
+    # 在 x 的最后一个维度上增加一个维度，将其转换为二维数组
+    # 用于适配线性回归的矩阵运算格式 
     ret = np.expand_dims(x, axis=1)
     return ret
 
-
 def multinomial_basis(x, feature_num=10):
-    """多项式基函数"""
-    x = np.expand_dims(x, axis=1)
-    feat = [x]
-    for i in range(2, feature_num+1):
-        feat.append(x**i)
-    ret = np.concatenate(feat, axis=1)
+    '''多项式基函数'''
+    # 在 x 的最后一个维度上增加一个维度，将其转换为二维数组
+    x = np.expand_dims(x, axis=1) # shape(N, 1)
+    #==========
+    #todo '''请实现多项式基函数'''
+    # 在 x 的最后一个维度上增加一个维度，将其转换为三维数组
+    # 通过列表推导式创建各次项，最后在列方向拼接合并
+    x = np.expand_dims(x, axis=1) # shape(N, 1)
+    # 生成 1, x, x^2, ..., x^(feature_num-1)
+    ret = [x**i for i in range(1, feature_num+1)]
+    # 将生成的列表合并成 shape(N, feature_num) 的二维数组
+    ret = np.concatenate(ret, axis=1)
+    #==========
     return ret
-
 
 def gaussian_basis(x, feature_num=10):
-    """高斯基函数"""
+    '''高斯基函数'''
+    # :param x: 输入的特征向量
+    #:param feature_num: 基函数的数量
+    #:return: 转换后的特征矩阵
+    #==========
+    #todo '''请实现高斯基函数'''
+    # 在 0 到 25 之间均匀分布 feature_num 个中心
     centers = np.linspace(0, 25, feature_num)
-    width = 1.0 * (centers[1] - centers[0])
-    x = np.expand_dims(x, axis=1)
-    x = np.concatenate([x]*feature_num, axis=1)
-    
-    out = (x-centers)/width
-    ret = np.exp(-0.5 * out ** 2)
+    # 每个基函数的宽度
+    widths = np.ones(feature_num) * (25 / feature_num)
+    # 计算高斯基函数的值，得到 shape(N, feature_num) 的二维数组
+    ret = np.exp(-0.5 * ((x[:, np.newaxis] - centers) / widths)**2)
+    #==========
     return ret
 
 
+# ## 返回一个训练好的模型 填空顺序 1 用最小二乘法进行模型优化 
+# ## 填空顺序 3 用梯度下降进行模型优化
+# > 先完成最小二乘法的优化 (参考书中第二章 2.3中的公式)
+# 
+# > 再完成梯度下降的优化   (参考书中第二章 2.3中的公式)
+# 
+# 在main中利用训练集训练好模型的参数，并且返回一个训练好的模型。
+# 
+# 计算出一个优化后的w，请分别使用最小二乘法以及梯度下降两种办法优化w
+
 def least_squares(phi, y, alpha=0.0):
-    """最小二乘法优化权重w（含L2正则化）"""
-    reg_matrix = alpha * np.eye(phi.shape[1])
-    w = np.linalg.pinv(phi.T @ phi + reg_matrix) @ phi.T @ y
+    """最小二乘法优化"""
+    # 使用伪逆更稳定，计算优化后的权重 w
+    w = np.linalg.pinv(phi.T @ phi + alpha * np.eye(phi.shape[1])) @ phi.T @ y
     return w
 
-
-def gradient_descent(phi, y, lr=0.001, epochs=1000, alpha=0.0, tolerance=1e-6):
-    """梯度下降优化权重w（含L2正则化和早停机制）"""
+def gradient_descent(phi, y, lr=0.01, epochs=1000):
+    """梯度下降优化
+    :param phi: 特征矩阵
+    :param y: 标签向量
+    :param lr: 学习率（默认为 0.01）
+    :param epochs: 迭代次数（默认为 1000）
+    :return: 优化后的权重向量 w
+    """
+    # 初始化权重 w 为全零向量
     w = np.zeros(phi.shape[1])
-    n = len(y)
-    
-    # 特征归一化（关键改进：防止梯度爆炸）
-    phi_mean = np.mean(phi, axis=0)
-    phi_std = np.std(phi, axis=0)
-    phi_std = np.where(phi_std == 0, 1, phi_std)  # 防止除以零
-    phi_normalized = (phi - phi_mean) / phi_std
-    
-    prev_loss = float('inf')
-    
+    # 迭代训练 epochs 次
     for epoch in range(epochs):
-        y_pred = phi_normalized @ w
-        error = y_pred - y
-        
-        # 计算梯度（含正则化项）
-        gradient = (1/n) * phi_normalized.T @ error + alpha * w
-        
-        # 更新权重
+        # 计算预测值
+        y_pred = phi @ w
+        # 计算梯度
+        gradient = -2 * phi.T @ (y - y_pred) / len(y)
+        # 更新权重 w
         w -= lr * gradient
-        
-        # 计算当前损失
-        current_loss = np.mean(error**2)
-        
-        # 打印阶段性损失
-        if epoch % 100 == 0:
-            print(f"Epoch {epoch}, Loss: {current_loss:.6f}")
-        
-        # 早停机制：如果损失变化很小，提前结束训练
-        if abs(prev_loss - current_loss) < tolerance:
-            print(f"Early stopping at epoch {epoch}")
-            break
-            
-        prev_loss = current_loss
-        
-        # 防止梯度爆炸：如果损失变得无穷大，停止训练
-        if np.isnan(current_loss) or np.isinf(current_loss):
-            print(f"Gradient explosion at epoch {epoch}, reducing learning rate...")
-            lr *= 0.1  # 降低学习率
-            w = np.zeros(phi.shape[1])  # 重置权重
-            epoch = 0  # 重新开始训练
-    
-    # 调整权重以适应原始特征尺度
-    w = w / phi_std
-    
     return w
 
-
-def main(x_train, y_train, basis_type='identity', method='lsq', **kwargs):
-    """主函数"""
-    basis_func = {
-        'identity': identity_basis,
-        'polynomial': lambda x: multinomial_basis(x, **kwargs),
-        'gaussian': lambda x: gaussian_basis(x, **kwargs)
-    }[basis_type]
+def main(x_train, y_train, use_gradient_descent=False):
+    """训练模型，并返回从x到y的映射。"""
+    basis_func = identity_basis  # 默认使用恒等基函数
     
-    # 特征预处理：添加偏置项
-    phi = np.hstack([np.ones((len(x_train), 1)), basis_func(x_train)])
+    # 生成偏置项和特征矩阵
+    phi0 = np.expand_dims(np.ones_like(x_train), axis=1)
+    phi1 = basis_func(x_train)
+    phi = np.concatenate([phi0, phi1], axis=1)
     
-    # 选择优化方法
-    if method == 'lsq':
-        w = least_squares(phi, y_train, **kwargs)
-    elif method == 'gd':
-        w = gradient_descent(phi, y_train, **kwargs)
-    else:
-        raise ValueError("method必须为'lsq'或'gd'")
+    # 最小二乘法求解权重
+    w_lsq = np.dot(np.linalg.pinv(phi), y_train)
+    
+    w_gd = None
+    if use_gradient_descent:
+        # 梯度下降求解权重（缩进修正）
+        learning_rate = 0.01
+        epochs = 1000
+        w_gd = np.zeros(phi.shape[1])
+        for epoch in range(epochs):
+            y_pred = np.dot(phi, w_gd)
+            error = y_pred - y_train
+            gradient = np.dot(phi.T, error) / len(y_train)
+            w_gd -= learning_rate * gradient
     
     # 定义预测函数
-    def predict(x):
-        phi_x = np.hstack([np.ones((len(x), 1)), basis_func(x)])
-        return phi_x @ w
+    def f(x):
+        phi0 = np.expand_dims(np.ones_like(x), axis=1)
+        phi1 = basis_func(x)
+        phi = np.concatenate([phi0, phi1], axis=1)
+        if use_gradient_descent and w_gd is not None:
+            return np.dot(phi, w_gd)
+        else:
+            return np.dot(phi, w_lsq)
     
-    return predict, w
+    # 确保返回值为可迭代对象
+    return f, w_lsq, w_gd
 
 
-def rmse(ys, ys_pred):
-    """计算均方根误差 (RMSE)"""
-    return np.sqrt(np.mean((ys - ys_pred) ** 2))
+# ## 评估结果 
+# > 没有需要填写的代码，但是建议读懂
 
+def evaluate(ys, ys_pred):
+    """评估模型。"""
+    # 计算预测值与真实值的标准差
+    std = np.sqrt(np.mean(np.abs(ys - ys_pred) ** 2))
+    return std
 
-def mae(ys, ys_pred):
-    """计算平均绝对误差 (MAE)"""
-    return np.mean(np.abs(ys - ys_pred))
-
-
-def r2(ys, ys_pred):
-    """计算决定系数 (R²)"""
-    ss_total = np.sum((ys - np.mean(ys)) ** 2)
-    ss_residual = np.sum((ys - ys_pred) ** 2)
-    return 1 - (ss_residual / ss_total)
-
-
+# 程序主入口（建议不要改动以下函数的接口）
 if __name__ == '__main__':
     # 定义训练和测试数据文件路径
-    train_file = 'train.txt'
-    test_file = 'test.txt'
-    
+    train_file = 'train.txt' # 训练集文件
+    test_file = 'test.txt'   # 测试集文件
     # 载入数据
-    x_train, y_train = load_data(train_file)
-    x_test, y_test = load_data(test_file)
-    print(f"训练集形状: {x_train.shape}")
-    print(f"测试集形状: {x_test.shape}")
+    x_train, y_train = load_data(train_file) # 从文件加载训练数据，返回特征矩阵x_train和标签向量y_train
+    x_test, y_test = load_data(test_file)    # 从文件加载测试数据，返回特征矩阵x_test和标签向量y_test
+    print(x_train.shape)
+    print(x_test.shape)
 
-    # 训练模型（使用最小二乘法）
-    f_lsq, w_lsq = main(x_train, y_train, method='lsq')
-    
-    # 训练模型（使用梯度下降法，降低学习率并增加早停）
-    f_gd, w_gd = main(
-        x_train, y_train, 
-        method='gd', 
-        lr=0.001,        # 降低学习率
-        epochs=2000,     # 增加迭代次数
-        alpha=0.01,      # 添加正则化
-        tolerance=1e-6   # 设置早停阈值
-    )
-    
-    # 评估最小二乘法
-    y_train_pred_lsq = f_lsq(x_train)
-    y_test_pred_lsq = f_lsq(x_test)
-    
-    # 评估梯度下降法
-    y_train_pred_gd = f_gd(x_train)
-    y_test_pred_gd = f_gd(x_test)
-    
-    # 打印评估结果
-    print("\n=== 最小二乘法评估结果 ===")
-    print(f"训练集 RMSE: {rmse(y_train, y_train_pred_lsq):.4f}")
-    print(f"测试集 RMSE: {rmse(y_test, y_test_pred_lsq):.4f}")
-    print(f"测试集 R²: {r2(y_test, y_test_pred_lsq):.4f}")
-    
-    print("\n=== 梯度下降法评估结果 ===")
-    print(f"训练集 RMSE: {rmse(y_train, y_train_pred_gd):.4f}")
-    print(f"测试集 RMSE: {rmse(y_test, y_test_pred_gd):.4f}")
-    print(f"测试集 R²: {r2(y_test, y_test_pred_gd):.4f}")
+    # 使用线性回归训练模型，返回一个函数 f() 使得 y = f(x)
+    # f: 预测函数 y = f(x)
+    # w_lsq: 通过最小二乘法得到的权重向量
+    # w_gd: 通过梯度下降法得到的权重向量
+    f, w_lsq, w_gd = main(x_train, y_train)
 
-    # 可视化结果
-    plt.figure(figsize=(10, 6))
+    y_train_pred = f(x_train) # 对训练数据应用预测函数
+    std = evaluate(y_train, y_train_pred) # 计算预测值与真实值的标准差作为评估指标
+    print('训练集预测值与真实值的标准差：{:.1f}'.format(std))
     
-    # 训练数据点
-    plt.scatter(x_train, y_train, c='red', s=30, alpha=0.5, label='训练数据')
-    
-    # 测试数据点
-    plt.scatter(x_test, y_test, c='blue', s=30, alpha=0.5, label='测试数据')
-    
-    # 预测结果
-    plt.plot(x_test, y_test_pred_lsq, 'k-', linewidth=2, label='最小二乘法预测')
-    plt.plot(x_test, y_test_pred_gd, 'g--', linewidth=2, label='梯度下降预测')
-    
-    plt.xlabel('x')
-    plt.ylabel('y')
-    plt.title('线性回归模型预测结果')
-    plt.legend()
-    plt.grid(True, linestyle='--', alpha=0.7)
+    # 计算预测的输出值
+    y_test_pred = f(x_test)
+    # 使用测试集评估模型
+    std = evaluate(y_test, y_test_pred)
+    print('预测值与真实值的标准差：{:.1f}'.format(std))
+
+    # 显示结果
+    plt.plot(x_train, y_train, 'ro', markersize=3)
+    plt.plot(x_test, y_test, 'k')
+    plt.plot(x_test, y_test_pred, 'k')
+    plt.xlabel('x') # 设置x轴的标签
+    plt.ylabel('y') # 设置y轴的标签
+    plt.title('Linear Regression') # 设置图表标题
+    plt.legend(['train', 'test', 'pred']) # 添加图例，表示每条线的含义
     plt.show()
