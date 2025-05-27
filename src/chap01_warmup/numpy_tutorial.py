@@ -56,7 +56,7 @@ print("(2) 输出b 的（0,0）这个元素的值\n", b[0, 0])
 # 7. 把第5题中数组 a 的最后两行所有元素放到 c 中 (1)输出 c ; (2) 输出 c 中第一行的最后一个元素（提示，使用 -1表示最后一个元素）
 print("第七题：\n")
 
-c = a[-2:, :]  # 修正：使用-2:提取最后两行的所有列元素
+c = a[-2:, :]  # -2:提取最后两行的所有列元素
 print("(1)输出 c \n", c)
 print("(2)输出 c 中第一行的最后一个元素\n", c[0, -1]) # -1 表示选取该行的最后一个元素
 
@@ -154,14 +154,14 @@ print("x转置后的结果:\n", x.T)
 # 22.利用13题目中的x,求e的指数（提示： 函数 np.exp()）
 print("第二十二题：\n")
 
-print("e的指数：np.exp(x)")  # 修正：添加引号，修复语法错误
+print("e的指数：np.exp(x)")  
 print(np.exp(x))
 
 # 23.利用13题目中的 x,求值最大的下标（提示(1)print(np.argmax(x)) ,(2) print(np.argmax(x, axis =0))(3)print(np.argmax(x),axis =1))
 print("第二十三题：\n")
 print("print(np.argmax(x))", np.argmax(x))# 打印整个数组 x 中最大值的下标
 print("print(np.argmax(x, axis=0))", np.argmax(x, axis=0))# 打印数组 x 沿着第 0 轴（通常是行方向）上每一列最大值的下标
-print("print(np.argmax(x, axis=1))", np.argmax(x, axis=1))# 修正：修复括号不匹配问题，打印数组 x 沿着第 1 轴（通常是列方向）上每一行最大值的下标
+print("print(np.argmax(x, axis=1))", np.argmax(x, axis=1))# 打印数组 x 沿着第 1 轴（通常是列方向）上每一行最大值的下标
 
 # 24,画图，y=x*x 其中 x = np.arange(0, 100, 0.1) （使用 NumPy 和 Matplotlib 绘制了二次函数 y=x^2 的图像）
 print("第二十四题：\n")
