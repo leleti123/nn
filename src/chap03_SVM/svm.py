@@ -38,50 +38,13 @@ class SVM():
         self.w = None                  # 初始化权重向量为None，后续训练时会设置
         self.b = 0                     # 偏置项
         pass
+    
 
     def train(self, data_train):
         """
-        训练模型。
+        训练 SVM 模型。
+        :param data_train: 包含特征和标签的 NumPy 数组，形状为 (n_samples, n_features + 1)
         """
-        # 提取特征和标签
-        x = data_train[:, :2]           # 从训练数据中提取特征（前两列）
-        t = data_train[:, 2]            # 从训练数据中提取标签（第三列）
-        
-        # 初始化参数
-        n_samples, n_features = x.shape
-        self.w = np.zeros(n_features)   # 将权重向量初始化为零向量
-        learning_rate = 0.01            # 学习率η：控制参数更新步长
-        lambda_ = 0.01                  # 正则化系数λ：控制模型复杂度         
-        epochs = 1000                   # 训练轮数，即遍历整个数据集的次数
- 
-        # 梯度下降优化
-        for _ in range(epochs):                                                 #外层循环 epochs 次，控制训练轮数
-            for idx, x_i in enumerate(x):                                       #内层遍历每个样本，进行参数更新
-                # 计算预测值（使用符号函数判断分类）                               # idx 为第几个真实标签，表示是否分类正确了，np.dot(x_i, self.w) + self.b为模型预测值，分类正确，condition大于等于1
-                condition = t[idx] * (np.dot(x_i, self.w) + self.b)
-                if condition >= 1:
-                    self.w -= learning_rate * (lambda_ * self.w)                # 正确的话仅更新正则化项
-                else:
-                    self.w -= learning_rate * (lambda_ * self.w - t[idx] * x_i) # 更新正则化项，惩罚权重过大，惩罚分类错误
-                    self.b -= learning_rate * (-t[idx])                         # 更新损失项
-        # 请补全此处代码
-
-        def predict(self, x):
-
-            if self.weights is None:
-                raise RuntimeError("Model not trained yet")                     #确保模型已训练（权重已初始化）
-            logits = np.dot(x, self.weights) + self.bias                        #logits 即线性函数 w*x + b，logits > 0，预测为正类，反之负类
-            return (logits >= 0).astype(int)                                    #将布尔值（True/False）转换为整数（1/0）
-        # 二分类示例
-    def predict(self, x):
-        """
-        预测标签。
-        """
-
-        # 请补全此处代码
-        # 计算决策函数值
-        decision_values = np.dot(x, self.w) + self.b                            # 计算决策函数值:logits = X·w + b,其中 w 是权重向量,b 是偏置项
-        return np.where(decision_values >= 0, 1, 0)                             # 如果大于等于 0，返回 1（正类）；否则返回 0（负类）
 
 
 if __name__ == '__main__':
