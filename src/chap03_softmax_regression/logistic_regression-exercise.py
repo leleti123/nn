@@ -17,9 +17,10 @@ import matplotlib.cm as cm
 import numpy as np
 
 # 确保在Jupyter Notebook中内联显示图形
-get_ipython().run_line_magic('matplotlib', 'inline')
+# get_ipython().run_line_magic('matplotlib', 'inline')
 
 # 设置数据点数量
+# 正样本主要分布在 “坐标 (3,6)” 附近
 dot_num = 100
 # 从均值为3，标准差为1的高斯分布中采样x坐标，用于正样本
 x_p = np.random.normal(3., 1, dot_num)
@@ -31,7 +32,7 @@ y = np.ones(dot_num)
 C1 = np.array([x_p, y_p, y]).T
 # random函数为伪随机数生成，并非真随机
 
-
+# 负样本主要分布在 “坐标 (6,3)” 附近
 # 从均值为6，标准差为1的高斯分布中采样x坐标，用于负样本
 x_n = np.random.normal(6., 1, dot_num)
 # 从均值为3，标准差为1的高斯分布中采样y坐标，用于负样本
@@ -41,11 +42,13 @@ y = np.zeros(dot_num)
 # 将负样本的x、y坐标和标签组合成一个数组，形状为 (dot_num, 3)
 C2 = np.array([x_n, y_n, y]).T
 
+## # 画散点图：给数据 “拍照”
 # 绘制正样本，用蓝色加号表示
 plt.scatter(C1[:, 0], C1[:, 1], c='b', marker='+')
 # 绘制负样本，用绿色圆圈表示
 plt.scatter(C2[:, 0], C2[:, 1], c='g', marker='o')
 
+## # 混合数据：模拟真实场景
 # 将正样本和负样本连接成一个数据集
 data_set = np.concatenate((C1, C2), axis=0)
 # 随机打乱数据集的顺序
@@ -74,6 +77,8 @@ class LogisticRegression():
         self.trainable_variables = [self.W, self.b]
     @tf.function
     def __call__(self, inp):
+        # 确保输入数据类型与模型参数类型一致
+        inp = tf.cast(inp, tf.float32)  # 添加类型转换
         # 计算输入数据与权重的矩阵乘法，再加上偏置，得到logits，形状为(N, 1)
         logits = tf.matmul(inp, self.W) + self.b 
         # 对logits应用sigmoid函数，得到预测概率
@@ -92,10 +97,13 @@ def compute_loss(pred, label):
     #输出 losses shape(N,) 每一个样本一个loss
     #todo 填空一，实现sigmoid的交叉熵损失函数(不使用tf内置的loss 函数)
     # 计算每个样本的sigmoid交叉熵损失，防止log(0)的情况，加上一个小的epsilon
-    losses = - label * tf.math.log(pred + epsilon) - (1 - label) * tf.math.log(1 - pred + epsilon)
-    # 交叉熵损失公式（二分类问题）：
-    # L = -Σ [y * log(p) + (1 - y) * log(1 - p)]
-    # 其中 y 是真实标签，p 是预测概率
+    epsilon = 1e-12  # 关键数值稳定性处理
+    # 正样本损失：-y * log(pred)
+    positive_loss = -label * tf.math.log(pred + epsilon)  # 正样本交叉熵项
+    # 负样本损失：-(1-y) * log(1-pred)
+    negative_loss = -(1 - label) * tf.math.log(1 - pred + epsilon)  # 负样本交叉熵项
+    # 合并正负样本损失：每个样本的总损失
+    losses = positive_loss + negative_loss  # 总损失计算
     '''============================='''
     # 计算所有样本损失的平均值
     loss = tf.reduce_mean(losses)
@@ -134,6 +142,11 @@ if __name__ == '__main__':
     x1, x2, y = list(zip(*data_set))
     # 将x1和x2组合成输入数据x
     x = list(zip(x1, x2))
+    
+    # 将输入数据转换为float32类型，这是TensorFlow能识别的「数字格式」
+    x = tf.cast(x, tf.float32)  # 类型转换
+    y = tf.cast(y, tf.float32)  # 类型转换
+    
     # 用于存储训练过程中的参数和损失值，以便后续可视化
     animation_fram = []
     
@@ -202,5 +215,13 @@ def animate(i):
 anim = animation.FuncAnimation(f, animate, init_func=init,
                                frames=len(animation_fram), interval=30, blit=True)
 
-# 将动画转换为HTML5视频格式并显示
-HTML(anim.to_html5_video())
+# 由于在普通Python环境中运行，修改动画显示方式
+try:
+    # 尝试在Jupyter环境中显示
+    from IPython.display import HTML
+    display(HTML(anim.to_html5_video()))
+except:
+    # 在普通Python环境中保存为GIF或显示最后一帧
+    plt.show()  # 显示最后一帧结果
+    # 或者保存为GIF（需要安装pillow）
+    # anim.save('logistic_regression.gif', writer='pillow')
