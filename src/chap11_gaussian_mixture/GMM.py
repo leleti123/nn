@@ -18,7 +18,7 @@ def generate_data(n_samples=1000):
     weights_true = np.array([0.3, 0.4, 0.3])
     n_components = len(weights_true)
     
-    # 生成每个簇的样本
+    # 生成一个合成数据集，该数据集由多个多元正态分布的样本组成
     samples_per_component = (weights_true * n_samples).astype(int)
     X_list = []
     y_true = []
@@ -35,8 +35,32 @@ def generate_data(n_samples=1000):
 
 # 自定义logsumexp函数
 def logsumexp(log_p, axis=1, keepdims=False):
+    #max_val = np.max(log_p, axis=axis, keepdims=True)
+    #return max_val + np.log(np.sum(np.exp(log_p - max_val), axis=axis, keepdims=keepdims))
+    """优化后的logsumexp实现，包含数值稳定性增强和特殊case处理"""
+    log_p = np.asarray(log_p)
+    
+    # 处理空输入情况
+    if log_p.size == 0:
+        return np.array(-np.inf, dtype=log_p.dtype)
+    
+    # 计算最大值（处理全-inf输入）
     max_val = np.max(log_p, axis=axis, keepdims=True)
-    return max_val + np.log(np.sum(np.exp(log_p - max_val), axis=axis, keepdims=keepdims))
+    if np.all(np.isneginf(max_val)):
+        return max_val.copy() if keepdims else max_val.squeeze(axis=axis)
+    
+    # 计算修正后的指数和（处理-inf输入）
+    safe_log_p = np.where(np.isneginf(log_p), -np.inf, log_p - max_val)
+    sum_exp = np.sum(np.exp(safe_log_p), axis=axis, keepdims=keepdims)
+    
+    # 计算最终结果
+    result = max_val + np.log(sum_exp)
+    
+    # 处理全-inf输入的特殊case
+    if np.any(np.isneginf(log_p)) and not np.any(np.isfinite(log_p)):
+        result = max_val.copy() if keepdims else max_val.squeeze(axis=axis) #根据keepdims参数的值返回 max_val 的适当形式。
+    
+    return result
 
 # 高斯混合模型类
 class GaussianMixtureModel:
@@ -87,18 +111,30 @@ class GaussianMixtureModel:
         # 计算最终聚类结果
         self.labels_ = np.argmax(gamma, axis=1)
         return self
-    
+
     def _log_gaussian(self, X, mu, sigma):
+        # 获取特征维度数量
         n_features = mu.shape[0]
+
+        # 将每个样本减去均值，进行中心化处理
         X_centered = X - mu
-        # 计算行列式的对数和逆矩阵
+
+        # 计算协方差矩阵的对数行列式（log determinant）和符号
+        # 如果协方差矩阵不可逆或行列式为负，说明可能存在数值问题
         sign, logdet = np.linalg.slogdet(sigma)
         if sign <= 0:
+            # 添加微小扰动确保协方差矩阵正定（数值稳定性）
             sigma += np.eye(n_features) * 1e-6
             sign, logdet = np.linalg.slogdet(sigma)
+
+        # 计算协方差矩阵的逆
         inv = np.linalg.inv(sigma)
-        # 计算二次型项
+
+        # 计算高斯分布中的指数项（二次型），对应 (x - μ)^T Σ⁻¹ (x - μ)
         exponent = -0.5 * np.sum(X_centered @ inv * X_centered, axis=1)
+
+        # 返回多维高斯分布的对数概率密度值
+        # 公式为：-0.5 * D * log(2π) - 0.5 * log|Σ| + exponent
         return -0.5 * n_features * np.log(2 * np.pi) - 0.5 * logdet + exponent
 
 # 主程序
@@ -115,7 +151,13 @@ if __name__ == "__main__":
     plt.subplot(1, 2, 1)
     plt.scatter(X[:, 0], X[:, 1], c=y_true, cmap='viridis', s=10)
     plt.title("True Clusters")
+    plt.xlabel("Feature 1")
+    plt.ylabel("Feature 2")
+    plt.grid(True, linestyle='--', alpha=0.7)
     plt.subplot(1, 2, 2)
     plt.scatter(X[:, 0], X[:, 1], c=y_pred, cmap='viridis', s=10)
     plt.title("GMM Predicted Clusters")
+    plt.xlabel("Feature 1")
+    plt.ylabel("Feature 2")
+    plt.grid(True, linestyle='--', alpha=0.7)
     plt.show()

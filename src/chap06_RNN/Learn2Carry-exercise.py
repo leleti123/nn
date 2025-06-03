@@ -1,32 +1,26 @@
 #!/usr/bin/env python
 # coding: utf-8
-
 # # 加法进位实验
-# 
-
 # <img src="https://github.com/JerrikEph/jerrikeph.github.io/raw/master/Learn2Carry.png" width=650>
 
 # In[1]:
-
-
+#导入了多个用于构建和训练深度学习模型的Python库和模块
 import numpy as np
 import tensorflow as tf
 import collections
 from tensorflow import keras
+from tensorflow.keras import layers
 from tensorflow.keras import layers, optimizers, datasets
 import os,sys,tqdm
 
 
 # ## 数据生成
 # 我们随机在 `start->end`之间采样除整数对`(num1, num2)`，计算结果`num1+num2`作为监督信号。
-# 
 # * 首先将数字转换成数字位列表 `convertNum2Digits`
 # * 将数字位列表反向
 # * 将数字位列表填充到同样的长度 `pad2len`
-# 
 
 # In[2]:
-
 
 def gen_data_batch(batch_size, start, end):
     '''在(start, end)区间采样生成一个batch的整型的数据
@@ -96,11 +90,9 @@ def prepare_batch(Nums1, Nums2, results, maxlen):
     
     return Nums1, Nums2, results
 
-
 # # 建模过程， 按照图示完成建模
 
 # In[3]:
-
 
 class myRNNModel(keras.Model):
     def __init__(self):
@@ -131,25 +123,21 @@ class myRNNModel(keras.Model):
         logits = self.dense(rnn_outputs)  # (batch_size, maxlen, 10)
         return logits
         
-
-
 # In[4]:
-
-
 @tf.function
 def compute_loss(logits, labels):
     losses = tf.nn.sparse_softmax_cross_entropy_with_logits(
             logits=logits, labels=labels)
-    return tf.reduce_mean(losses)
+    return tf.reduce_mean(losses)## 使用交叉熵损失函数来计算每个样本的损失
 
 @tf.function
 def train_one_step(model, optimizer, x, y, label):
     with tf.GradientTape() as tape:
-        logits = model(x, y)
+        logits = model(x, y)       #前向传播：计算输出 logits
         loss = compute_loss(logits, label)
 
     # compute gradient
-    grads = tape.gradient(loss, model.trainable_variables)
+    grads = tape.gradient(loss, model.trainable_variables)#计算梯度，自动求导
     optimizer.apply_gradients(zip(grads, model.trainable_variables))
     return loss
 
@@ -170,9 +158,10 @@ def train(steps, model, optimizer):
 def evaluate(model):
     datas = gen_data_batch(batch_size=2000, start=555555555, end=999999999)
     Nums1, Nums2, results = prepare_batch(*datas, maxlen=11)
+    # 前向传播预测 logits
     logits = model(tf.constant(Nums1, dtype=tf.int32), tf.constant(Nums2, dtype=tf.int32))
     logits = logits.numpy()
-    pred = np.argmax(logits, axis=-1)
+    pred = np.argmax(logits, axis=-1) # 每位取最大概率的数字
     res = results_converter(pred)
     for o in list(zip(datas[2], res))[:20]:
         print(o[0], o[1], o[0]==o[1])
@@ -182,13 +171,11 @@ def evaluate(model):
 
 # In[5]:
 
-
 optimizer = optimizers.Adam(0.001)
 model = myRNNModel()
 
 
 # In[6]:
-
 
 train(3000, model, optimizer)
 evaluate(model)

@@ -99,6 +99,7 @@ print(a[np.arange(4), b])
 (1,2) → 6
 (2,0) → 7
 (3,1) → 11
+
 #### 10. 修改数组中的特定元素
 ```python
 a[np.arange(4), b] += 10
@@ -108,10 +109,7 @@ print(a)
 
   以下是统一格式后的第11题至第16题解析：
 
-  ### **第11题解析**  
-  **题目要求**：执行 `x = np.array([1, 2])`，输出 `x` 的数据类型。  
-  **代码示例**：  
-
+#### 11. 执行 `x = np.array([1, 2])`，输出 `x` 的数据类型  
   ```python
   x = np.array([1, 2])
   print("输出:", type(x))  # 输出: <class 'numpy.ndarray'>
@@ -124,10 +122,7 @@ print(a)
 
   ---
 
-  ### **第12题解析**  
-  **题目要求**：执行 `x = np.array([1.0, 2.0])`，输出 `x` 的数据类型。  
-  **代码示例**：  
-
+#### 12. 执行 `x = np.array([1.0, 2.0])`，输出 `x` 的数据类型
   ```python
   x = np.array([1.0, 2.0])
   print("输出:", type(x))  # 输出: <class 'numpy.ndarray'>
@@ -139,9 +134,7 @@ print(a)
 
   ---
 
-  ### **第13题解析**  
-  **题目要求**：创建两个二维数组 `x` 和 `y`，输出 `x + y` 和 `np.add(x, y)`。  
-  **代码示例**：  
+#### 13. 创建两个二维数组 `x` 和 `y`，输出 `x + y` 和 `np.add(x, y)`  
   ```python
   x = np.array([[1, 2], [3, 4]], dtype=np.float64)
   y = np.array([[5, 6], [7, 8]], dtype=np.float64)
@@ -154,9 +147,7 @@ print(a)
 
   ---
 
-  ### **第14题解析**  
-  **题目要求**：利用第13题的 `x` 和 `y`，输出 `x - y` 和 `np.subtract(x, y)`。  
-  **代码示例**：  
+#### 14. 利用第13题的 `x` 和 `y`，输出 `x - y` 和 `np.subtract(x, y)`  
   ```python
   print("x - y:\n", x - y)
   print("np.subtract(x, y):\n", np.subtract(x, y))
@@ -167,9 +158,7 @@ print(a)
 
   ---
 
-  ### **第15题解析**  
-  **题目要求**：利用第13题的 `x` 和 `y`，输出 `x * y`、`np.multiply(x, y)` 和 `np.dot(x, y)`，比较差异。  
-  **代码示例**：  
+#### 15. 利用第13题的 `x` 和 `y`，输出 `x * y`、`np.multiply(x, y)` 和 `np.dot(x, y)`，比较差异 
   ```python
   print("逐元素乘法（x * y）:\n", x * y)
   print("np.multiply(x, y):\n", np.multiply(x, y))
@@ -191,9 +180,7 @@ print(a)
 
   ---
 
-  ### **第16题解析**  
-  **题目要求**：利用第13题的 `x` 和 `y`，输出 `x / y` 和 `np.divide(x, y)`。  
-  **代码示例**：  
+#### 16. 利用第13题的 `x` 和 `y`，输出 `x / y` 和 `np.divide(x, y)`  
   ```python
   print("x / y:\n", x / y)
   print("np.divide(x, y):\n", np.divide(x, y))
@@ -316,30 +303,40 @@ plt.show()                        # 显示图像
 #### 25-26. 绘制正余弦函数图像
 ```python
 print("第二十五题：\n")
-x_sin_cos = np.arange(0, 3 * np.pi, 0.1)  # 0到3π的连续数据
-y_sin = np.sin(x_sin_cos)
-y_cos = np.cos(x_sin_cos)
+# 设置中文字体支持
+plt.rcParams["font.family"] = ["SimHei", "WenQuanYi Micro Hei", "Heiti TC"]
+plt.rcParams['axes.unicode_minus'] = False  # 解决负号显示问题
+
+# 生成数据
+x = np.arange(0, 3 * np.pi, 0.1)
+y_sin = np.sin(x)
+y_cos = np.cos(x)
+
+# 创建画布和子图
+plt.figure(figsize=(12, 5))
 
 # 绘制正弦曲线
-plt.figure(figsize=(10, 6))
-plt.plot(x_sin_cos, y_sin, label="y = sin(x)", color="blue")
-plt.title("Plot of y = sin(x)")
-plt.xlabel("x")
-plt.ylabel("y")
-plt.grid(True)
+plt.subplot(1, 2, 1)  # 1行2列的第1个子图
+plt.plot(x, y_sin, 'b-', linewidth=2, label='y = sin(x)')
+plt.title('正弦函数图像')
+plt.xlabel('x')
+plt.ylabel('y')
+plt.grid(True, linestyle='--', alpha=0.7)
+plt.axhline(y=0, color='black', linestyle='-', alpha=0.3)
+plt.xticks([0, np.pi, 2*np.pi, 3*np.pi], ['0', 'π', '2π', '3π'])
 plt.legend()
-plt.show()
 
-# 绘制余弦曲线（代码结构与正弦一致）
-plt.figure(figsize=(10, 6))
-plt.plot(x_sin_cos, y_cos, label="y = cos(x)", color="red")
-plt.title("Plot of y = cos(x)")
-plt.xlabel("x")
-plt.ylabel("y")
-plt.grid(True)
+# 绘制余弦曲线
+plt.subplot(1, 2, 2)  # 1行2列的第2个子图
+plt.plot(x, y_cos, 'r-', linewidth=2, label='y = cos(x)')
+plt.title('余弦函数图像')
+plt.xlabel('x')
+plt.ylabel('y')
+plt.grid(True, linestyle='--', alpha=0.7)
+plt.axhline(y=0, color='black', linestyle='-', alpha=0.3)
+plt.xticks([0, np.pi, 2*np.pi, 3*np.pi], ['0', 'π', '2π', '3π'])
 plt.legend()
+
+# 调整布局
+plt.tight_layout()
 plt.show()
-```
-- **图像特点**：
-  - 正弦曲线：周期为`2π`，值域[-1,1]
-  - 余弦曲线：与正弦曲线相位差`π/2`，形状相同但平移
