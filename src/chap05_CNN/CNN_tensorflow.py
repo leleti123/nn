@@ -30,13 +30,17 @@ def bias_variable(shape):
     initial = tf.constant(0.1, shape=shape)
     return tf.Variable(initial)
 
+# 卷积操作
 def conv2d(x, W):
-    # 每一维度  滑动步长全部是 1， padding 方式 选择 same
+    # 卷积核像一个 “放大镜”，在图像上逐块扫描，提取边缘、纹理等特征，不同的卷积核关注不同的特征
+    # 每一维度  滑动步长全部是 1， padding 方式 选择 same ，边缘填充，保持输出尺寸与输入相同 (28×28)
     # 提示 使用函数  tf.nn.conv2d
     
     return tf.nn.conv2d(x, W, strides=[1, 1, 1, 1], padding='SAME')
 
+# 池化操作
 def max_pool_2x2(x):
+    # 池化层通过降采样减少特征图尺寸，保留关键信息，降低计算量和过拟合风险，池化就像 “压缩照片”，把 4 个像素合成 1 个 (取最大值)
     # 滑动步长 是 2步; 池化窗口的尺度 高和宽度都是2; padding 方式 请选择 same
     # 提示 使用函数  tf.nn.max_pool
     
@@ -68,18 +72,18 @@ b_fc1 = bias_variable([1024])
 
 h_pool2_flat = tf.reshape(h_pool2, [-1, 7*7*64])
 h_fc1 = tf.nn.relu(tf.matmul(h_pool2_flat, W_fc1) + b_fc1)
-h_fc1_drop = tf.nn.dropout(h_fc1, keep_prob)
+h_fc1_drop = tf.nn.dropout(h_fc1, keep_prob) # 训练时随机 “关闭” 部分神经元 (概率为1-keep_prob)，迫使网络学习更鲁棒的特征，减少对特定神经元的依赖
 
 # 全连接层 2
 ## fc2 layer ##
 W_fc2 = weight_variable([1024, 10])
 b_fc2 = bias_variable([10])
-prediction = tf.nn.softmax(tf.matmul(h_fc1_drop, W_fc2) + b_fc2)
+prediction = tf.nn.softmax(tf.matmul(h_fc1_drop, W_fc2) + b_fc2) # Softmax 将线性输出转换为概率分布 (P(y=i) = e^z_i / Σ(e^z_j))，确保所有概率和为 1
 
 # 交叉熵函数
-cross_entropy = tf.reduce_mean(-tf.reduce_sum(ys * tf.log(prediction),
+cross_entropy = tf.reduce_mean(-tf.reduce_sum(ys * tf.log(prediction), # 交叉熵衡量预测概率与真实标签的差异，公式为H(p,q) = -Σ(p_i·log(q_i))
                                               reduction_indices=[1]))
-train_step = tf.train.AdamOptimizer(learning_rate).minimize(cross_entropy)
+train_step = tf.train.AdamOptimizer(learning_rate).minimize(cross_entropy) # 自适应调整学习率，对不同参数使用不同步长，加速收敛
 
 with tf.Session() as sess:
     init = tf.global_variables_initializer()
