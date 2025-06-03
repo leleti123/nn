@@ -6,10 +6,13 @@ import numpy as np
 def load_data(fname):
 
             x2 = float(line[1])
-            t = int(line[2])
-            data.append([x1, x2, t])     # 将解析后的特征和标签组合成一个列表，添加到data列表中
-        return np.array(data)            # 将收集的所有数据行转换为 NumPy 数组并返回
 
+            # 将第三个字段转换为整数（标签/类别）
+            t = int(line[2])
+
+
+        # 将整个列表转换为 NumPy 数组，方便后续数值计算和处理
+        return np.array(data)
 
 def eval_acc(label, pred):
 
